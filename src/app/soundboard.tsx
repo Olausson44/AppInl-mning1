@@ -1,16 +1,19 @@
 import { Foundation } from "@expo/vector-icons";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
+import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-const soundSource = require("../../assets/DjTunder.mp3");
+import { sounds } from "..//sounds";
 
 export default function Soundboard() {
-  const player = useAudioPlayer(soundSource);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const player = useAudioPlayer(sounds[currentIndex].source);
   const status = useAudioPlayerStatus(player);
 
   const playsound = () => {
     if (status.playing) {
       player.pause();
       player.seekTo(0);
+      setCurrentIndex(currentIndex + 1);
     } else {
       player.seekTo(0);
       player.play();
@@ -21,6 +24,7 @@ export default function Soundboard() {
     <View style={styles.container}>
       <Text style={styles.title}>Soundboard</Text>
       <Text style={styles.subtitle}>Press to play sound!</Text>
+      <Text>{sounds[currentIndex].title}</Text>
 
       <Pressable
         style={[
