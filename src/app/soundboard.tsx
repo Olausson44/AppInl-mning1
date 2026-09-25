@@ -1,6 +1,6 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Foundation } from "@expo/vector-icons";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
-
+import { Pressable, StyleSheet, Text, View } from "react-native";
 const soundSource = require("../../assets/DjTunder.mp3");
 
 export default function Soundboard() {
@@ -22,7 +22,19 @@ export default function Soundboard() {
       <Text style={styles.title}>Soundboard</Text>
       <Text style={styles.subtitle}>Press to play sound!</Text>
 
-      <Pressable style={[styles.button, {backgroundColor: status.playing ? "#ef4444" : "#22c553" }]} onPress={playsound}>
+      <Pressable
+        style={[
+          styles.button,
+          { backgroundColor: status.playing ? "#ef4444" : "#22c553" },
+        ]}
+        onPress={playsound}
+      >
+        <Foundation
+          name={status.playing ? "stop" : "play"}
+          size={24}
+          color="#ffffff"
+        />
+
         <Text style={styles.buttonText}>
           {!status.playing ? "Start" : "Stop"}
         </Text>
@@ -48,11 +60,13 @@ const styles = StyleSheet.create({
     color: "#64748b",
   },
   button: {
-    
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
     paddingVertical: 18,
     paddingHorizontal: 36,
     borderRadius: 16,
-    elevation: 6, 
+    elevation: 6,
   },
   buttonText: {
     color: "#ffffff",
