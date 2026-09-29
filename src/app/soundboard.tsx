@@ -4,13 +4,15 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { sounds } from "..//sounds";
 import * as ScreenOrientation from "expo-screen-orientation";
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
+import { useFocusEffect } from "expo-router";
 
 
 export default function Soundboard() {
-  useEffect(() => {
+  useFocusEffect(
+  useCallback(() => {
     ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-  }, []);
+  }, []));
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [penaltyIndex, setPenaltyIndex]= useState(0);

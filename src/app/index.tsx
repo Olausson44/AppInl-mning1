@@ -1,7 +1,13 @@
-import { Link } from "expo-router";
+import { Link, useFocusEffect } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
+import * as ScreenOrientation from "expo-screen-orientation";
+
 
 export default function Index() {
+  useFocusEffect(
+    () => {
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+    });
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Dj-Floorball</Text>
