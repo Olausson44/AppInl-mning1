@@ -3,8 +3,15 @@ import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { sounds } from "..//sounds";
+import  * as ScreenOrientation from "expo-screen-orientation";
+import { useEffect } from "react";
 
 export default function Soundboard() {
+  
+  useEffect(()=> {
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+  },[]);
+  
   const [currentIndex, setCurrentIndex] = useState(0);
   const player = useAudioPlayer(sounds[currentIndex].source);
   const status = useAudioPlayerStatus(player);
