@@ -1,11 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Modal, Pressable, Text, View } from "react-native";
+import * as ScreenOrientation from "expo-screen-orientation";
 
 import { sounds, SoundTrack } from "../sounds";
 
 export default function Playlist() {
   const [selectedSong, setSelectedSong] = useState<SoundTrack | null>(null);
 
+  useEffect(() => {
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+  }, []);
   return (
     <View>
       {sounds.map((s) => (

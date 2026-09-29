@@ -3,59 +3,116 @@ import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { sounds } from "..//sounds";
-import  * as ScreenOrientation from "expo-screen-orientation";
+import * as ScreenOrientation from "expo-screen-orientation";
 import { useEffect } from "react";
 
+
 export default function Soundboard() {
-  
-  useEffect(()=> {
+  useEffect(() => {
     ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-  },[]);
-  
+  }, []);
+
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [penaltyIndex, setPenaltyIndex]= useState(0);
   const player = useAudioPlayer(sounds[currentIndex].source);
   const status = useAudioPlayerStatus(player);
+  const [activeButton, setActiveButton] = useState<"break" | "penalty" | "goal" | null>(null);
+  const isBreakPlaying = status.playing && activeButton === "break";
+  const isPenaltyPlaying = status.playing && activeButton === "penalty";
+  const isGoalPlaying = status.playing && activeButton === "goal";
+  const goalSounds = sounds.filter((s)=> s.category === "goal");
+  const breakSounds = sounds.filter((s)=> s.category === "break");
+  const penaltySounds = sounds.filter((s)=> s.category === "penalty");
 
-  const playsound = () => {
-    if (status.playing) {
-      player.pause();
-      player.seekTo(0);
-      setCurrentIndex(currentIndex + 1);
-    } else {
-      player.seekTo(0);
-      player.play();
-    }
-  };
+  const handlePlay = (type: "break" | "goal" | "penalty", soundFile: any) =>{
+if (status.playing && activeButton === type)
+{
+  player.pause();
+  player.seekTo(0);
+  if(type === "penalty")
+  {
+ setPenaltyIndex((penaltyIndex + 1) % penaltySounds.length);
+  }
+  if(type === "break")
+  {
+  setCurrentIndex((currentIndex +1) % breakSounds.length);
+  }
+  
+  setActiveButton(null);
+}
+else{
+  player.replace(soundFile);
+  player.play();
+  
+  
+  setActiveButton(type);
+
+}
+  }
+
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Soundboard</Text>
-      <Text style={styles.subtitle}>Press to play sound!</Text>
-      <Text>{sounds[currentIndex].title}</Text>
+      <View style={styles.leftContainer}>
+        <Pressable
+          style={[styles.buttonGoal, {backgroundColor: isPenaltyPlaying? "#ef4444" : "#d0df08" },]}
+          onPress={() => handlePlay("penalty", penaltySounds[penaltyIndex].source)}
+        >
+          <Text style={styles.buttonText}>
+            {!isPenaltyPlaying? "PENALTY" : "Stop"}
+          </Text>
+        </Pressable>
+        <Pressable
+          style={[styles.buttonGoal, {backgroundColor: isGoalPlaying? "#ef4444" : "#312ee9" },]}
+          onPress={() => handlePlay("goal", goalSounds[0].source)}
+        >
+          <Text style={styles.buttonText}>
+            {!isGoalPlaying ? "GOAL" : "Stop"}
+          </Text>
+        </Pressable>
+      </View>
+      <View style={styles.rightContainer}>
+        <Text>{sounds[currentIndex].title}</Text>
 
-      <Pressable
-        style={[
-          styles.button,
-          { backgroundColor: status.playing ? "#ef4444" : "#22c553" },
-        ]}
-        onPress={playsound}
-      >
-        <Foundation
-          name={status.playing ? "stop" : "play"}
-          size={24}
-          color="#ffffff"
-        />
+        <Pressable
+          style={[
+            styles.buttonBreak,
+            { backgroundColor: isBreakPlaying ? "#ef4444" : "#22c553" },
+          ]}
+          onPress={() =>handlePlay("break", breakSounds[currentIndex].source)}
+        >
+          <Foundation
+            name={status.playing ? "stop" : "play"}
+            size={24}
+            color="#ffffff"
+          />
 
-        <Text style={styles.buttonText}>
-          {!status.playing ? "Start" : "Stop"}
-        </Text>
-      </Pressable>
+          <Text style={styles.buttonText}>
+            {!isBreakPlaying ? "Start" : "Stop"}
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    flexDirection: "row",
+    padding: 10,
+    gap: 15,
+
+    backgroundColor: "#fcf8f8",
+  },
+  leftContainer: {
+    flex: 1,
+    gap:15,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f8fafc",
+  },
+  rightContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
@@ -70,14 +127,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#64748b",
   },
-  button: {
+  buttonBreak: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: 10,
     paddingVertical: 18,
     paddingHorizontal: 36,
     borderRadius: 16,
     elevation: 6,
+    height: 200,
+    width: 300,
+  },
+  buttonPenalty: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingVertical: 18,
+    paddingHorizontal: 36,
+    borderRadius: 16,
+    elevation: 6,
+    height: 100,
+    width: 100,
+    
+  },
+  buttonGoal: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingVertical: 18,
+    paddingHorizontal: 36,
+    borderRadius: 16,
+    elevation: 6,
+    height: 100,
+    width: 250,
   },
   buttonText: {
     color: "#ffffff",
