@@ -74,7 +74,7 @@ else{
         </Pressable>
       </View>
       <View style={styles.rightContainer}>
-        <Text>{sounds[currentIndex].title}</Text>
+        <Text style={styles.songTitle}>{sounds[currentIndex].title}</Text>
 
         <Pressable
           style={[
@@ -105,20 +105,20 @@ const styles = StyleSheet.create({
     padding: 10,
     gap: 15,
 
-    backgroundColor: "#fcf8f8",
+    backgroundColor: "#121212",
   },
   leftContainer: {
     flex: 1,
-    gap:15,
+    gap:60,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#121212",
   },
   rightContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#121212",
   },
   title: {
     fontSize: 26,
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: "#64748b",
+    color: "#e9eff7",
   },
   buttonBreak: {
     flexDirection: "row",
@@ -171,4 +171,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
   },
+  songTitle: {
+      color: "#ffd700",      // Guld som matchar menyn! (Eller "#ffffff" för krispigt vitt)
+      fontSize: 18,          // Lite större och tydligare text
+      fontWeight: "bold",    // Fet stil
+      marginBottom: 12,      // Lite luft ner till den stora knappen
+      textAlign: "center",   // Centrerad text
+    }
 });

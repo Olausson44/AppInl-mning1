@@ -11,7 +11,7 @@ export default function RootLayout() {
         headerTitleAlign: "center",
         tabBarStyle: {
           backgroundColor: "#000000",
-          marginBottom: 20,
+          
           alignContent: "center",
         },
         tabBarIconStyle: { marginTop: 5 },
@@ -29,6 +29,7 @@ export default function RootLayout() {
       <Tabs.Screen
         name="soundboard"
         options={{
+          headerShown: false,
           title: "Soundboard",
           tabBarIcon: (props) => <Foundation name="play-circle" {...props} />,
         }}
