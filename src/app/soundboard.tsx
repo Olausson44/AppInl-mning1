@@ -2,7 +2,7 @@ import { Foundation } from "@expo/vector-icons";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { sounds } from "..//sounds";
+import { sounds, SoundTrack } from "..//sounds";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useEffect, useCallback } from "react";
 import { useFocusEffect } from "expo-router";
@@ -26,7 +26,7 @@ export default function Soundboard() {
   const breakSounds = sounds.filter((s)=> s.category === "break");
   const penaltySounds = sounds.filter((s)=> s.category === "penalty");
 
-  const handlePlay = (type: "break" | "goal" | "penalty", soundFile: any) =>{
+  const handlePlay = (type: "break" | "goal" | "penalty", song: SoundTrack ) =>{
 if (status.playing && activeButton === type)
 {
   player.pause();
@@ -43,7 +43,8 @@ if (status.playing && activeButton === type)
   setActiveButton(null);
 }
 else{
-  player.replace(soundFile);
+  player.replace(song.source);
+  player.seekTo(song.timeMarker ||0);
   player.play();
   
   
@@ -58,7 +59,7 @@ else{
       <View style={styles.leftContainer}>
         <Pressable
           style={[styles.buttonGoal, {backgroundColor: isPenaltyPlaying? "#ef4444" : "#d0df08" },]}
-          onPress={() => handlePlay("penalty", penaltySounds[penaltyIndex].source)}
+          onPress={() => handlePlay("penalty", penaltySounds[penaltyIndex])}
         >
           <Text style={styles.buttonText}>
             {!isPenaltyPlaying? "PENALTY" : "Stop"}
@@ -66,7 +67,7 @@ else{
         </Pressable>
         <Pressable
           style={[styles.buttonGoal, {backgroundColor: isGoalPlaying? "#ef4444" : "#312ee9" },]}
-          onPress={() => handlePlay("goal", goalSounds[0].source)}
+          onPress={() => handlePlay("goal", goalSounds[0])}
         >
           <Text style={styles.buttonText}>
             {!isGoalPlaying ? "GOAL" : "Stop"}
@@ -81,7 +82,7 @@ else{
             styles.buttonBreak,
             { backgroundColor: isBreakPlaying ? "#ef4444" : "#22c553" },
           ]}
-          onPress={() =>handlePlay("break", breakSounds[currentIndex].source)}
+          onPress={() =>handlePlay("break", breakSounds[currentIndex])}
         >
           <Foundation
             name={status.playing ? "stop" : "play"}

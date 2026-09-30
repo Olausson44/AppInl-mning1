@@ -5,6 +5,7 @@ export interface SoundTrack {
   id: number;
   title: string;
   source: any;
+  timeMarker?: number;
   category: SoundCategory;
 }
 
