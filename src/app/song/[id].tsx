@@ -1,9 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Slider from "@react-native-community/slider";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import * as ScreenOrientation from "expo-screen-orientation";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { sounds } from "../../sounds";
 
 export default function SongDetail() {
@@ -15,6 +16,26 @@ export default function SongDetail() {
   const [savedStartTime, setSavedStartTime] = useState<number | undefined>(
     selectedSong?.timeMarker,
   );
+
+  useFocusEffect(
+    useCallback(() => {
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+    }, [])
+  );
+
+  // Ladda in rätt ljudfil i spelaren när låten ändras
+  useEffect(() => {
+    if (selectedSong?.source) {
+      player.replace(selectedSong.source);
+    }
+  }, [selectedSong, player]);
+
+  // Pausa när man lämnar skärmen
+  useEffect(() => {
+    return () => {
+      player.pause();
+    };
+  }, [player]);
 
   useEffect(() => {
     async function loadSavedTime() {
@@ -36,7 +57,6 @@ export default function SongDetail() {
   const handlePlay = () => {
     if (status.playing) {
       player.pause();
-      player.seekTo(0);
     } else {
       player.seekTo(sliderPosition);
       player.play();
@@ -44,26 +64,26 @@ export default function SongDetail() {
   };
 
   const handleSaveStartTime = async () => {
-    // Spara på telefonen permanent med nyckel 'marker_<låt-id>'
     await AsyncStorage.setItem(`marker_${id}`, sliderPosition.toString());
     setSavedStartTime(sliderPosition);
+    Alert.alert(
+      "Sparat!",
+      `Starttiden är nu sparad till ${sliderPosition.toFixed(1)}s`,
+    );
   };
 
   return (
-    <View>
-      <View>
-        <Text style={{ fontSize: 18, color: "red", padding: 10 }}>Hej{id}</Text>
-
+    <View style={styles.container}>
+      <View style={styles.header}>
         <Pressable onPress={() => router.navigate(`/playlist`)}>
-          <Text style={{ fontSize: 18, color: "red", padding: 10 }}>Close</Text>
+          <Text style={{ fontSize: 18, color: "#ffd700", padding: 10 }}>Tillbaka</Text>
         </Pressable>
 
-        <Text>
-          {selectedSong?.id}
+        <Text style={styles.titleText}>
           {selectedSong?.title}
         </Text>
       </View>
-      <View>
+      <View style={styles.controls}>
         <Pressable onPress={() => handlePlay()}>
           <Text style={styles.playbutton}>
             {!status.playing ? "Play" : "Stop"}
@@ -71,38 +91,71 @@ export default function SongDetail() {
         </Pressable>
 
         <Slider
-          style={{ width: 400, height: 100 }}
+          style={{ width: "90%", height: 60 }}
           minimumValue={0}
-          maximumValue={status.duration}
+          maximumValue={status.duration > 0 ? status.duration : 100}
+          value={sliderPosition}
           onValueChange={(value) => setSliderPosition(value)}
-          onSlidingComplete={(value) => player.seekTo(value)}
+          onSlidingComplete={(value) => {
+            setSliderPosition(value);
+            player.seekTo(value);
+          }}
           minimumTrackTintColor="#2db312"
           maximumTrackTintColor="#eb0f0f"
-          thumbSize={32}
           thumbTintColor="#aae422"
         />
         <Pressable onPress={handleSaveStartTime}>
-          <Text style={styles.playbutton}>SAVE</Text>
+          <Text style={styles.savebutton}>SAVE</Text>
         </Pressable>
-        <Text>Reglagets position: {sliderPosition}</Text>
-        <Text>Aktuell speltid: {status.currentTime}</Text>
-        <Text>Sparad starttid: {savedStartTime}</Text>
+        <Text style={styles.infoText}>Reglagets position: {sliderPosition.toFixed(1)}s</Text>
+        <Text style={styles.infoText}>Aktuell speltid: {status.currentTime.toFixed(1)}s</Text>
+        <Text style={styles.infoText}>Sparad starttid: {savedStartTime !== undefined ? savedStartTime.toFixed(1) + "s" : "Ingen"}</Text>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#121212",
+    padding: 16,
+  },
+  header: {
+    marginBottom: 20,
+  },
+  titleText: {
+    color: "#ffffff",
+    fontSize: 20,
+    fontWeight: "bold",
+    marginTop: 8,
+  },
+  controls: {
+    alignItems: "center",
+    gap: 16,
+  },
   playbutton: {
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
+    backgroundColor: "#22c553",
     paddingVertical: 18,
-    paddingHorizontal: 36,
+    paddingHorizontal: 48,
     borderRadius: 16,
-    elevation: 6,
-    height: 200,
-    width: 300,
+    width: "80%",
+  },
+  savebutton: {
+    color: "#ffffff",
+    backgroundColor: "#0284c7",
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    fontWeight: "bold",
+    fontSize: 16,
+    textAlign: "center",
+    overflow: "hidden",
+  },
+  infoText: {
+    color: "#e2e8f0",
+    fontSize: 16,
   },
 });
