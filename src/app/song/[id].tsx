@@ -1,26 +1,38 @@
-import { router, useLocalSearchParams } from "expo-router";
-import { View, Text, Pressable } from "react-native";
-import { sounds } from "../../sounds";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Slider from "@react-native-community/slider";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
-import{useEffect, useState} from "react";
-import { StyleSheet } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { sounds } from "../../sounds";
 
 export default function SongDetail() {
-    
   const { id } = useLocalSearchParams<{ id: string }>();
   const selectedSong = sounds.find((s) => s.id === Number(id));
   const player = useAudioPlayer(selectedSong?.source);
   const status = useAudioPlayerStatus(player);
   const [sliderPosition, setSliderPosition] = useState(0);
-  const [savedStartTime, setSavedStartTime] = useState(selectedSong?.timeMarker);
+  const [savedStartTime, setSavedStartTime] = useState<number | undefined>(
+    selectedSong?.timeMarker,
+  );
 
   useEffect(() => {
-      // När låt-ID ändras: ladda in den nya låtens sparade starttid!
-      setSavedStartTime(selectedSong?.timeMarker);
-      setSliderPosition(selectedSong?.timeMarker || 0);
-    }, [id]);
-  
+    async function loadSavedTime() {
+      const storedTime = await AsyncStorage.getItem(`marker_${id}`);
+      if (storedTime !== null) {
+        const time = parseFloat(storedTime);
+        setSavedStartTime(time);
+        setSliderPosition(time);
+      } else {
+        const initial = selectedSong?.timeMarker || 0;
+        setSavedStartTime(initial);
+        setSliderPosition(initial);
+      }
+    }
+
+    loadSavedTime();
+  }, [id, selectedSong]);
+
   const handlePlay = () => {
     if (status.playing) {
       player.pause();
@@ -31,11 +43,10 @@ export default function SongDetail() {
     }
   };
 
-  const handleSaveStartTime = () => {
-    if (selectedSong) {
-      selectedSong.timeMarker = sliderPosition;
-      setSavedStartTime(sliderPosition);
-    }
+  const handleSaveStartTime = async () => {
+    // Spara på telefonen permanent med nyckel 'marker_<låt-id>'
+    await AsyncStorage.setItem(`marker_${id}`, sliderPosition.toString());
+    setSavedStartTime(sliderPosition);
   };
 
   return (
@@ -54,9 +65,11 @@ export default function SongDetail() {
       </View>
       <View>
         <Pressable onPress={() => handlePlay()}>
-          <Text style={styles.playbutton}>{!status.playing ? "Play" : "Stop"}</Text>
+          <Text style={styles.playbutton}>
+            {!status.playing ? "Play" : "Stop"}
+          </Text>
         </Pressable>
-        
+
         <Slider
           style={{ width: 400, height: 100 }}
           minimumValue={0}
@@ -69,7 +82,7 @@ export default function SongDetail() {
           thumbTintColor="#aae422"
         />
         <Pressable onPress={handleSaveStartTime}>
-          <Text style={styles.playbutton}>SAVE</Text> 
+          <Text style={styles.playbutton}>SAVE</Text>
         </Pressable>
         <Text>Reglagets position: {sliderPosition}</Text>
         <Text>Aktuell speltid: {status.currentTime}</Text>
@@ -80,8 +93,8 @@ export default function SongDetail() {
 }
 
 const styles = StyleSheet.create({
-    playbutton: {
-      flexDirection: "row",
+  playbutton: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
@@ -90,6 +103,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     elevation: 6,
     height: 200,
-    width: 300,  
-    }
-})
+    width: 300,
+  },
+});

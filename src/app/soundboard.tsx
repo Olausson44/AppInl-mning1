@@ -1,57 +1,56 @@
 import { Foundation } from "@expo/vector-icons";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { sounds, SoundTrack } from "..//sounds";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { sounds, SoundTrack } from "../sounds";
 import * as ScreenOrientation from "expo-screen-orientation";
-import { useEffect, useCallback } from "react";
 import { useFocusEffect } from "expo-router";
-
 
 export default function Soundboard() {
   useFocusEffect(
-  useCallback(() => {
-    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-  }, []));
+    useCallback(() => {
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+    }, [])
+  );
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [penaltyIndex, setPenaltyIndex]= useState(0);
+  const [penaltyIndex, setPenaltyIndex] = useState(0);
   const player = useAudioPlayer(sounds[currentIndex].source);
   const status = useAudioPlayerStatus(player);
   const [activeButton, setActiveButton] = useState<"break" | "penalty" | "goal" | null>(null);
   const isBreakPlaying = status.playing && activeButton === "break";
   const isPenaltyPlaying = status.playing && activeButton === "penalty";
   const isGoalPlaying = status.playing && activeButton === "goal";
-  const goalSounds = sounds.filter((s)=> s.category === "goal");
-  const breakSounds = sounds.filter((s)=> s.category === "break");
-  const penaltySounds = sounds.filter((s)=> s.category === "penalty");
+  const goalSounds = sounds.filter((s) => s.category === "goal");
+  const breakSounds = sounds.filter((s) => s.category === "break");
+  const penaltySounds = sounds.filter((s) => s.category === "penalty");
 
-  const handlePlay = (type: "break" | "goal" | "penalty", song: SoundTrack ) =>{
-if (status.playing && activeButton === type)
-{
-  player.pause();
-  player.seekTo(0);
-  if(type === "penalty")
-  {
- setPenaltyIndex((penaltyIndex + 1) % penaltySounds.length);
-  }
-  if(type === "break")
-  {
-  setCurrentIndex((currentIndex +1) % breakSounds.length);
-  }
-  
-  setActiveButton(null);
-}
-else{
-  player.replace(song.source);
-  player.seekTo(song.timeMarker ||0);
-  player.play();
-  
-  
-  setActiveButton(type);
+  const handlePlay = async (type: "break" | "goal" | "penalty", song: SoundTrack) => {
+    if (status.playing && activeButton === type) {
+      player.pause();
+      player.seekTo(0);
+      if (type === "penalty") {
+        setPenaltyIndex((penaltyIndex + 1) % penaltySounds.length);
+      }
+      if (type === "break") {
+        setCurrentIndex((currentIndex + 1) % breakSounds.length);
+      }
 
-}
-  }
+      setActiveButton(null);
+    } else {
+      player.replace(song.source);
+
+      // Hämta sparad starttid från telefonens minne om den finns
+      const stored = await AsyncStorage.getItem(`marker_${song.id}`);
+      const startTime = stored !== null ? parseFloat(stored) : (song.timeMarker || 0);
+
+      player.seekTo(startTime);
+      player.play();
+
+      setActiveButton(type);
+    }
+  };
 
 
   return (

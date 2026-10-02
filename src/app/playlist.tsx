@@ -1,16 +1,17 @@
-import { useState, useEffect, useCallback } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback } from "react";
+import { Pressable, Text, View } from "react-native";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useFocusEffect, router } from "expo-router";
 
-import { sounds, SoundTrack } from "../sounds";
+import { sounds } from "../sounds";
 
 export default function Playlist() {
-  
-useFocusEffect(
-  useCallback(() => {
-    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
-  }, []));
+  useFocusEffect(
+    useCallback(() => {
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+    }, [])
+  );
+
   return (
     <View>
       {sounds.map((s) => (
@@ -18,24 +19,6 @@ useFocusEffect(
           <Text>{s.title}</Text>
         </Pressable>
       ))}
-      
     </View>
   );
-}
-
-const styles = StyleSheet.create({
-  modalContainer: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      padding: 20,
-      backgroundColor: "#ffffff", // Vit fin bakgrund på popupen
-    },
-  modaltext:{
-color: "#f10909"
-  },
-  modalbutton:{
-    flex: 1,
-    alignContent: "flex-end"
-  }
-})
+}
