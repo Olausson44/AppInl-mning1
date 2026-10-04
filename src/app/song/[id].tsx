@@ -1,11 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Slider from "@react-native-community/slider";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
+import * as Haptics from "expo-haptics";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
-import { sounds, SoundTrack } from "../../sounds";
+import { sounds, SoundCategory, SoundTrack } from "../../sounds";
 
 export default function SongDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -139,6 +140,22 @@ export default function SongDetail() {
     );
   };
 
+  const handleChangeCategory = async (newCategory: SoundCategory) => {
+    Haptics.selectionAsync();
+    if (!selectedSong) return;
+
+    setSelectedSong((prev) => (prev ? { ...prev, category: newCategory } : prev));
+
+    const saved = await AsyncStorage.getItem("custom_songs");
+    if (saved) {
+      const list: SoundTrack[] = JSON.parse(saved);
+      const updatedList = list.map((s) =>
+        s.id === Number(id) ? { ...s, category: newCategory } : s
+      );
+      await AsyncStorage.setItem("custom_songs", JSON.stringify(updatedList));
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -150,6 +167,71 @@ export default function SongDetail() {
           {selectedSong?.title}
         </Text>
       </View>
+
+      {isCustomSong ? (
+        <View style={styles.categoryContainer}>
+          <Text style={styles.categoryHeading}>KATEGORI FÖR DENNA LÅT</Text>
+          <View style={styles.categoryRow}>
+            <Pressable
+              style={[
+                styles.categoryPill,
+                selectedSong?.category === "break" && styles.categoryPillActiveBreak,
+              ]}
+              onPress={() => handleChangeCategory("break")}
+            >
+              <Text
+                style={[
+                  styles.categoryPillText,
+                  selectedSong?.category === "break" && styles.categoryPillTextActive,
+                ]}
+              >
+                Paus
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.categoryPill,
+                selectedSong?.category === "goal" && styles.categoryPillActiveGoal,
+              ]}
+              onPress={() => handleChangeCategory("goal")}
+            >
+              <Text
+                style={[
+                  styles.categoryPillText,
+                  selectedSong?.category === "goal" && styles.categoryPillTextActive,
+                ]}
+              >
+                Mål
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.categoryPill,
+                selectedSong?.category === "penalty" && styles.categoryPillActivePenalty,
+              ]}
+              onPress={() => handleChangeCategory("penalty")}
+            >
+              <Text
+                style={[
+                  styles.categoryPillText,
+                  selectedSong?.category === "penalty" && styles.categoryPillTextActive,
+                ]}
+              >
+                Utvisning
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : (
+        <View style={styles.builtInBadge}>
+          <Text style={styles.builtInBadgeText}>
+            Kategori: {selectedSong?.category === "goal" ? "Mål" : selectedSong?.category === "penalty" ? "Utvisning" : "Paus"}
+          </Text>
+        </View>
+      )}
+
       <View style={styles.controls}>
         <View style={styles.playbackRow}>
           <Pressable style={styles.seekButton} onPress={seekBackward}>
@@ -315,5 +397,73 @@ const styles = StyleSheet.create({
     color: "#fca5a5",
     fontWeight: "bold",
     fontSize: 15,
+  },
+  categoryContainer: {
+    width: "100%",
+    backgroundColor: "#1a1a1a",
+    padding: 12,
+    borderRadius: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#2a2a2a",
+    alignItems: "center",
+  },
+  categoryHeading: {
+    color: "#94a3b8",
+    fontSize: 12,
+    fontWeight: "bold",
+    letterSpacing: 1,
+    marginBottom: 10,
+  },
+  categoryRow: {
+    flexDirection: "row",
+    gap: 8,
+    width: "100%",
+  },
+  categoryPill: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: "#262626",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#3a3a3a",
+  },
+  categoryPillActiveBreak: {
+    backgroundColor: "#14532d",
+    borderColor: "#22c55e",
+  },
+  categoryPillActiveGoal: {
+    backgroundColor: "#1e3a8a",
+    borderColor: "#3b82f6",
+  },
+  categoryPillActivePenalty: {
+    backgroundColor: "#713f12",
+    borderColor: "#eab308",
+  },
+  categoryPillText: {
+    color: "#a3a3a3",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  categoryPillTextActive: {
+    color: "#ffffff",
+    fontWeight: "bold",
+  },
+  builtInBadge: {
+    alignSelf: "flex-start",
+    marginBottom: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: "#1e1e1e",
+    borderWidth: 1,
+    borderColor: "#333333",
+  },
+  builtInBadgeText: {
+    color: "#94a3b8",
+    fontSize: 13,
+    fontWeight: "600",
   },
 });

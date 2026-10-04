@@ -13,7 +13,7 @@ Under en innebandymatch uppstår korta avbrott och situationer (mål, utvisning,
 DJ-Floorball löser detta genom:
 - **Soundboard (Liggande läge):** Stora, tydliga och färgkodade knappar för Mål, Utvisning och Paus/Avbrott. Visar aktuell låt direkt på pausknappen samt nästa låt i kön med smidig bläddring.
 - **Spellista (Stående läge):** Lista med alla ljudeffekter och låtar. Filtrering på kategori (Alla, Paus, Mål, Utvisning) i smidiga filterknappar, samt möjlighet att importera egna ljudfiler direkt från telefonens lagring.
-- **Låtdetaljer & Cue-point redigering:** Varje låt har en dedikerad detaljskärm där man kan provlyssna, spola fram/bakåt 10 sekunder och med ett reglage ställa in exakt var låten ska börja spelas (cue-point / "drop"). Denna starttid sparas i telefonens lokala minne och respekteras i soundboardet. Importerade låtar kan även tas bort härifrån.
+- **Låtdetaljer & Cue-point redigering:** Varje låt har en dedikerad detaljskärm där man kan provlyssna, spola fram/bakåt 10 sekunder och med ett reglage ställa in exakt var låten ska börja spelas (cue-point / "drop"). Denna starttid sparas i telefonens lokala minne och respekteras i soundboardet. För importerade låtar kan man enkelt välja/byta kategori (Paus, Mål, Utvisning) eller ta bort låten.
 - **Pausfrågesport (Web-API):** Genererar färska sportfrågor från ett externt API under längre periodpauser för att underhålla publiken eller sekretariatet.
 
 **Vem appen är för:**

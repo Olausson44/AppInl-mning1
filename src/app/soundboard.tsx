@@ -9,7 +9,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { sounds, SoundTrack } from "../sounds";
 
 export default function Soundboard() {
-  const [customBreakSounds, setCustomBreakSounds] = useState<SoundTrack[]>([]);
+  const [customSongs, setCustomSongs] = useState<SoundTrack[]>([]);
 
   useFocusEffect(
     useCallback(() => {
@@ -19,7 +19,9 @@ export default function Soundboard() {
         const saved = await AsyncStorage.getItem("custom_songs");
         if (saved) {
           const list: SoundTrack[] = JSON.parse(saved);
-          setCustomBreakSounds(list.filter((s) => s.category === "break"));
+          setCustomSongs(list);
+        } else {
+          setCustomSongs([]);
         }
       }
       loadCustom();
@@ -28,6 +30,7 @@ export default function Soundboard() {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [penaltyIndex, setPenaltyIndex] = useState(0);
+  const [goalIndex, setGoalIndex] = useState(0);
   const player = useAudioPlayer(sounds[currentIndex].source);
   const status = useAudioPlayerStatus(player);
   const [activeButton, setActiveButton] = useState<
@@ -36,12 +39,18 @@ export default function Soundboard() {
   const isBreakPlaying = status.playing && activeButton === "break";
   const isPenaltyPlaying = status.playing && activeButton === "penalty";
   const isGoalPlaying = status.playing && activeButton === "goal";
-  const goalSounds = sounds.filter((s) => s.category === "goal");
+  const goalSounds = [
+    ...sounds.filter((s) => s.category === "goal"),
+    ...customSongs.filter((s) => s.category === "goal"),
+  ];
   const breakSounds = [
     ...sounds.filter((s) => s.category === "break"),
-    ...customBreakSounds,
+    ...customSongs.filter((s) => s.category === "break"),
   ];
-  const penaltySounds = sounds.filter((s) => s.category === "penalty");
+  const penaltySounds = [
+    ...sounds.filter((s) => s.category === "penalty"),
+    ...customSongs.filter((s) => s.category === "penalty"),
+  ];
   const nextBreakSong = breakSounds[(currentIndex + 1) % breakSounds.length];
 
   // Ladda in senast spelade Break-låt när appen öppnas
@@ -91,6 +100,9 @@ export default function Soundboard() {
       player.seekTo(0);
       if (type === "penalty") {
         setPenaltyIndex((penaltyIndex + 1) % penaltySounds.length);
+      }
+      if (type === "goal") {
+        setGoalIndex((goalIndex + 1) % goalSounds.length);
       }
       if (type === "break") {
         const nextIndex = (currentIndex + 1) % breakSounds.length;
@@ -155,7 +167,12 @@ export default function Soundboard() {
               styles.buttonGoal,
               { backgroundColor: isPenaltyPlaying ? "#ef4444" : "#d0df08" },
             ]}
-            onPress={() => handlePlay("penalty", penaltySounds[penaltyIndex])}
+            onPress={() =>
+              handlePlay(
+                "penalty",
+                penaltySounds[penaltyIndex % penaltySounds.length],
+              )
+            }
           >
             <Text style={styles.buttonText}>
               {!isPenaltyPlaying ? "PENALTY" : "Stop"}
@@ -166,7 +183,9 @@ export default function Soundboard() {
               styles.buttonGoal,
               { backgroundColor: isGoalPlaying ? "#ef4444" : "#312ee9" },
             ]}
-            onPress={() => handlePlay("goal", goalSounds[0])}
+            onPress={() =>
+              handlePlay("goal", goalSounds[goalIndex % goalSounds.length])
+            }
           >
             <Text style={styles.buttonText}>
               {!isGoalPlaying ? "GOAL" : "Stop"}
