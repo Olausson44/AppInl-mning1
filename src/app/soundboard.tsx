@@ -1,24 +1,27 @@
 import { Foundation } from "@expo/vector-icons";
-import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
-import { useState, useCallback, useEffect } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { sounds, SoundTrack } from "../sounds";
-import * as ScreenOrientation from "expo-screen-orientation";
+import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
+import * as Haptics from "expo-haptics";
 import { useFocusEffect } from "expo-router";
+import * as ScreenOrientation from "expo-screen-orientation";
+import { useCallback, useEffect, useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { sounds, SoundTrack } from "../sounds";
 
 export default function Soundboard() {
   useFocusEffect(
     useCallback(() => {
       ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-    }, [])
+    }, []),
   );
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [penaltyIndex, setPenaltyIndex] = useState(0);
   const player = useAudioPlayer(sounds[currentIndex].source);
   const status = useAudioPlayerStatus(player);
-  const [activeButton, setActiveButton] = useState<"break" | "penalty" | "goal" | null>(null);
+  const [activeButton, setActiveButton] = useState<
+    "break" | "penalty" | "goal" | null
+  >(null);
   const isBreakPlaying = status.playing && activeButton === "break";
   const isPenaltyPlaying = status.playing && activeButton === "penalty";
   const isGoalPlaying = status.playing && activeButton === "goal";
@@ -57,12 +60,17 @@ export default function Soundboard() {
       player.seekTo(0);
       setActiveButton(null);
     }
-    const prevIndex = (currentIndex - 1 + breakSounds.length) % breakSounds.length;
+    const prevIndex =
+      (currentIndex - 1 + breakSounds.length) % breakSounds.length;
     setCurrentIndex(prevIndex);
     await AsyncStorage.setItem("last_break_index", prevIndex.toString());
   };
 
-  const handlePlay = async (type: "break" | "goal" | "penalty", song: SoundTrack) => {
+  const handlePlay = async (
+    type: "break" | "goal" | "penalty",
+    song: SoundTrack,
+  ) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (status.playing && activeButton === type) {
       player.pause();
       player.seekTo(0);
@@ -79,7 +87,8 @@ export default function Soundboard() {
     } else {
       // Hämta sparad starttid från telefonens minne först
       const stored = await AsyncStorage.getItem(`marker_${song.id}`);
-      const startTime = stored !== null ? parseFloat(stored) : (song.timeMarker || 0);
+      const startTime =
+        stored !== null ? parseFloat(stored) : song.timeMarker || 0;
 
       // Om det är en break-låt: kom ihåg att det är den vi spelar
       if (type === "break") {
@@ -105,7 +114,10 @@ export default function Soundboard() {
     <View style={styles.container}>
       <View style={styles.leftContainer}>
         <Pressable
-          style={[styles.buttonGoal, { backgroundColor: isPenaltyPlaying ? "#ef4444" : "#d0df08" }]}
+          style={[
+            styles.buttonGoal,
+            { backgroundColor: isPenaltyPlaying ? "#ef4444" : "#d0df08" },
+          ]}
           onPress={() => handlePlay("penalty", penaltySounds[penaltyIndex])}
         >
           <Text style={styles.buttonText}>
@@ -113,7 +125,10 @@ export default function Soundboard() {
           </Text>
         </Pressable>
         <Pressable
-          style={[styles.buttonGoal, { backgroundColor: isGoalPlaying ? "#ef4444" : "#312ee9" }]}
+          style={[
+            styles.buttonGoal,
+            { backgroundColor: isGoalPlaying ? "#ef4444" : "#312ee9" },
+          ]}
           onPress={() => handlePlay("goal", goalSounds[0])}
         >
           <Text style={styles.buttonText}>
@@ -168,7 +183,7 @@ const styles = StyleSheet.create({
   },
   leftContainer: {
     flex: 1,
-    gap:60,
+    gap: 60,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#121212",
@@ -229,7 +244,6 @@ const styles = StyleSheet.create({
     elevation: 6,
     height: 100,
     width: 100,
-    
   },
   buttonGoal: {
     flexDirection: "row",
@@ -249,10 +263,10 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   songTitle: {
-      color: "#ffd700",      // Guld som matchar menyn! (Eller "#ffffff" för krispigt vitt)
-      fontSize: 18,          // Lite större och tydligare text
-      fontWeight: "bold",    // Fet stil
-      marginBottom: 12,      // Lite luft ner till den stora knappen
-      textAlign: "center",   // Centrerad text
-    }
+    color: "#ffd700", // Guld som matchar menyn! (Eller "#ffffff" för krispigt vitt)
+    fontSize: 18, // Lite större och tydligare text
+    fontWeight: "bold", // Fet stil
+    marginBottom: 12, // Lite luft ner till den stora knappen
+    textAlign: "center", // Centrerad text
+  },
 });

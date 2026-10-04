@@ -44,6 +44,13 @@ export default function RootLayout() {
           }}
         />
         <Tabs.Screen
+          name="trivia"
+          options={{
+            title: "Pausfråga",
+            tabBarIcon: (props) => <Foundation name="megaphone" {...props} />,
+          }}
+        />
+        <Tabs.Screen
           name="song/[id]"
           options={{
             href: null,
