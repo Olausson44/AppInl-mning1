@@ -9,9 +9,20 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { sounds, SoundTrack } from "../sounds";
 
 export default function Soundboard() {
+  const [customBreakSounds, setCustomBreakSounds] = useState<SoundTrack[]>([]);
+
   useFocusEffect(
     useCallback(() => {
       ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+
+      async function loadCustom() {
+        const saved = await AsyncStorage.getItem("custom_songs");
+        if (saved) {
+          const list: SoundTrack[] = JSON.parse(saved);
+          setCustomBreakSounds(list.filter((s) => s.category === "break"));
+        }
+      }
+      loadCustom();
     }, []),
   );
 
@@ -26,8 +37,12 @@ export default function Soundboard() {
   const isPenaltyPlaying = status.playing && activeButton === "penalty";
   const isGoalPlaying = status.playing && activeButton === "goal";
   const goalSounds = sounds.filter((s) => s.category === "goal");
-  const breakSounds = sounds.filter((s) => s.category === "break");
+  const breakSounds = [
+    ...sounds.filter((s) => s.category === "break"),
+    ...customBreakSounds,
+  ];
   const penaltySounds = sounds.filter((s) => s.category === "penalty");
+  const nextBreakSong = breakSounds[(currentIndex + 1) % breakSounds.length];
 
   // Ladda in senast spelade Break-låt när appen öppnas
   useEffect(() => {
@@ -112,40 +127,55 @@ export default function Soundboard() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.leftContainer}>
-        <Pressable
-          style={[
-            styles.buttonGoal,
-            { backgroundColor: isPenaltyPlaying ? "#ef4444" : "#d0df08" },
-          ]}
-          onPress={() => handlePlay("penalty", penaltySounds[penaltyIndex])}
-        >
-          <Text style={styles.buttonText}>
-            {!isPenaltyPlaying ? "PENALTY" : "Stop"}
-          </Text>
-        </Pressable>
-        <Pressable
-          style={[
-            styles.buttonGoal,
-            { backgroundColor: isGoalPlaying ? "#ef4444" : "#312ee9" },
-          ]}
-          onPress={() => handlePlay("goal", goalSounds[0])}
-        >
-          <Text style={styles.buttonText}>
-            {!isGoalPlaying ? "GOAL" : "Stop"}
-          </Text>
-        </Pressable>
-      </View>
-      <View style={styles.rightContainer}>
-        <Text style={styles.songTitle} numberOfLines={1}>
-          {breakSounds[currentIndex]?.title}
-        </Text>
-
-        <View style={styles.breakControls}>
-          <Pressable style={styles.navButton} onPress={handlePrevious}>
-            <Foundation name="previous" size={32} color="#ffd700" />
+      {/* Centrerad topp-panel med nästa låt och bläddring */}
+      <View style={styles.topBar}>
+        <View style={styles.nextSongContainer}>
+          <Pressable style={styles.arrowButton} onPress={handlePrevious}>
+            <Foundation name="previous" size={24} color="#ffd700" />
           </Pressable>
 
+          <View style={styles.nextSongTextWrapper}>
+            <Text style={styles.nextSongLabel}>NÄSTA I KÖN</Text>
+            <Text style={styles.nextSongTitle} numberOfLines={1}>
+              {nextBreakSong?.title}
+            </Text>
+          </View>
+
+          <Pressable style={styles.arrowButton} onPress={handleNext}>
+            <Foundation name="next" size={24} color="#ffd700" />
+          </Pressable>
+        </View>
+      </View>
+
+      {/* Huvuddelen med knapparna (vänster och höger) */}
+      <View style={styles.mainRow}>
+        <View style={styles.leftContainer}>
+          <Pressable
+            style={[
+              styles.buttonGoal,
+              { backgroundColor: isPenaltyPlaying ? "#ef4444" : "#d0df08" },
+            ]}
+            onPress={() => handlePlay("penalty", penaltySounds[penaltyIndex])}
+          >
+            <Text style={styles.buttonText}>
+              {!isPenaltyPlaying ? "PENALTY" : "Stop"}
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[
+              styles.buttonGoal,
+              { backgroundColor: isGoalPlaying ? "#ef4444" : "#312ee9" },
+            ]}
+            onPress={() => handlePlay("goal", goalSounds[0])}
+          >
+            <Text style={styles.buttonText}>
+              {!isGoalPlaying ? "GOAL" : "Stop"}
+            </Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.rightContainer}>
+          {/* Stor start/stopp-knapp med låtens namn inuti */}
           <Pressable
             style={[
               styles.buttonBreak,
@@ -154,17 +184,16 @@ export default function Soundboard() {
             onPress={() => handlePlay("break", breakSounds[currentIndex])}
           >
             <Foundation
-              name={status.playing ? "stop" : "play"}
-              size={28}
+              name={isBreakPlaying ? "stop" : "play"}
+              size={36}
               color="#ffffff"
             />
-            <Text style={styles.buttonText}>
-              {!isBreakPlaying ? "Start" : "Stop"}
+            <Text style={styles.buttonBreakStatus}>
+              {isBreakPlaying ? "STOPP" : "SPELA PAUS"}
             </Text>
-          </Pressable>
-
-          <Pressable style={styles.navButton} onPress={handleNext}>
-            <Foundation name="next" size={32} color="#ffd700" />
+            <Text style={styles.buttonBreakSongTitle} numberOfLines={2}>
+              {breakSounds[currentIndex]?.title}
+            </Text>
           </Pressable>
         </View>
       </View>
@@ -175,98 +204,106 @@ export default function Soundboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: "row",
-    padding: 10,
-    gap: 15,
-
+    paddingTop: 10,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
     backgroundColor: "#121212",
+  },
+  topBar: {
+    alignItems: "center",
+    width: "100%",
+    marginBottom: 8,
+  },
+  nextSongContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#1e1e1e",
+    borderWidth: 1,
+    borderColor: "#333333",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    width: "70%",
+    maxWidth: 420,
+  },
+  arrowButton: {
+    padding: 8,
+  },
+  nextSongTextWrapper: {
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: 8,
+  },
+  nextSongLabel: {
+    color: "#ffd700",
+    fontSize: 10,
+    fontWeight: "bold",
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  nextSongTitle: {
+    color: "#cbd5e1",
+    fontSize: 13,
+    fontWeight: "500",
+    textAlign: "center",
+  },
+  mainRow: {
+    flex: 1,
+    flexDirection: "row",
+    gap: 20,
   },
   leftContainer: {
     flex: 1,
-    gap: 60,
+    gap: 20,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#121212",
   },
   rightContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#121212",
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#e9eff7",
-  },
-  breakControls: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-  },
-  navButton: {
-    backgroundColor: "#1e1e1e",
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#333333",
-    alignItems: "center",
-    justifyContent: "center",
-    height: 180,
-    width: 60,
   },
   buttonBreak: {
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
-    paddingVertical: 18,
-    paddingHorizontal: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     borderRadius: 16,
     elevation: 6,
-    height: 180,
-    width: 200,
+    height: 190,
+    width: 290,
   },
-  buttonPenalty: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    paddingVertical: 18,
-    paddingHorizontal: 36,
-    borderRadius: 16,
-    elevation: 6,
-    height: 100,
-    width: 100,
+  buttonBreakStatus: {
+    color: "#ffffff",
+    fontSize: 20,
+    fontWeight: "bold",
+    marginTop: 4,
+    marginBottom: 6,
+  },
+  buttonBreakSongTitle: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "600",
+    textAlign: "center",
+    opacity: 0.95,
+    paddingHorizontal: 8,
   },
   buttonGoal: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    paddingVertical: 18,
-    paddingHorizontal: 36,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
     borderRadius: 16,
     elevation: 6,
-    height: 100,
-    width: 250,
+    height: 85,
+    width: 260,
   },
   buttonText: {
     color: "#ffffff",
     fontSize: 20,
     fontWeight: "bold",
-  },
-  songTitle: {
-    color: "#ffd700", // Guld som matchar menyn! (Eller "#ffffff" för krispigt vitt)
-    fontSize: 18, // Lite större och tydligare text
-    fontWeight: "bold", // Fet stil
-    marginBottom: 12, // Lite luft ner till den stora knappen
-    textAlign: "center", // Centrerad text
   },
 });
