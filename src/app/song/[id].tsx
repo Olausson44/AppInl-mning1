@@ -42,7 +42,11 @@ export default function SongDetail() {
   useFocusEffect(
     useCallback(() => {
       ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
-    }, [])
+
+      return () => {
+        player.pause();
+      };
+    }, [player])
   );
 
   // Ladda in rätt ljudfil i spelaren när låten ändras
@@ -156,10 +160,15 @@ export default function SongDetail() {
     }
   };
 
+  const handleBack = () => {
+    player.pause();
+    router.navigate("/playlist");
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.navigate(`/playlist`)}>
+        <Pressable onPress={handleBack}>
           <Text style={{ fontSize: 18, color: "#ffd700", padding: 10 }}>Tillbaka</Text>
         </Pressable>
 

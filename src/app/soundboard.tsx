@@ -9,7 +9,15 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { sounds, SoundTrack } from "../sounds";
 
 export default function Soundboard() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [penaltyIndex, setPenaltyIndex] = useState(0);
+  const [goalIndex, setGoalIndex] = useState(0);
   const [customSongs, setCustomSongs] = useState<SoundTrack[]>([]);
+  const player = useAudioPlayer(sounds[currentIndex].source);
+  const status = useAudioPlayerStatus(player);
+  const [activeButton, setActiveButton] = useState<
+    "break" | "penalty" | "goal" | null
+  >(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -25,17 +33,14 @@ export default function Soundboard() {
         }
       }
       loadCustom();
-    }, []),
+
+      return () => {
+        player.pause();
+        setActiveButton(null);
+      };
+    }, [player]),
   );
 
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [penaltyIndex, setPenaltyIndex] = useState(0);
-  const [goalIndex, setGoalIndex] = useState(0);
-  const player = useAudioPlayer(sounds[currentIndex].source);
-  const status = useAudioPlayerStatus(player);
-  const [activeButton, setActiveButton] = useState<
-    "break" | "penalty" | "goal" | null
-  >(null);
   const isBreakPlaying = status.playing && activeButton === "break";
   const isPenaltyPlaying = status.playing && activeButton === "penalty";
   const isGoalPlaying = status.playing && activeButton === "goal";
