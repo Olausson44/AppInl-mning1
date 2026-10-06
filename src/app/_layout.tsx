@@ -1,8 +1,13 @@
 import { Foundation } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { Tabs } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Platform } from "react-native";
 
 export default function RootLayout() {
+  const insets = useSafeAreaInsets();
+  const bottomInset = insets.bottom > 0 ? insets.bottom : (Platform.OS === "android" ? 22 : 12);
+
   return (
     <>
       <StatusBar style="light" />
@@ -14,9 +19,17 @@ export default function RootLayout() {
           headerTitleAlign: "center",
           tabBarStyle: {
             backgroundColor: "#000000",
-            alignContent: "center",
+            borderTopColor: "#222222",
+            height: 64 + bottomInset,
+            paddingBottom: bottomInset + 8,
+            paddingTop: 6,
           },
-          tabBarIconStyle: { marginTop: 5 },
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: "600",
+            marginBottom: 4,
+          },
+          tabBarIconStyle: { marginTop: 0 },
           tabBarActiveTintColor: "#ffd700",
           tabBarInactiveTintColor: "#ffffff",
         }}
