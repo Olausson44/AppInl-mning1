@@ -8,11 +8,21 @@ import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { sounds, SoundTrack } from "../sounds";
 
+function shuffleList<T>(list: T[]): T[] {
+  const result = [...list];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 export default function Soundboard() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [penaltyIndex, setPenaltyIndex] = useState(0);
   const [goalIndex, setGoalIndex] = useState(0);
   const [customSongs, setCustomSongs] = useState<SoundTrack[]>([]);
+  const [playlistOrder, setPlaylistOrder] = useState<number[]>([]);
   const player = useAudioPlayer(sounds[currentIndex].source);
   const status = useAudioPlayerStatus(player);
   const [activeButton, setActiveButton] = useState<
@@ -23,7 +33,7 @@ export default function Soundboard() {
     useCallback(() => {
       ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
 
-      async function loadCustom() {
+      async function loadData() {
         const saved = await AsyncStorage.getItem("custom_songs");
         if (saved) {
           const list: SoundTrack[] = JSON.parse(saved);
@@ -31,8 +41,13 @@ export default function Soundboard() {
         } else {
           setCustomSongs([]);
         }
+
+        const savedOrder = await AsyncStorage.getItem("playlist_order");
+        if (savedOrder) {
+          setPlaylistOrder(JSON.parse(savedOrder));
+        }
       }
-      loadCustom();
+      loadData();
 
       return () => {
         player.pause();
@@ -48,15 +63,42 @@ export default function Soundboard() {
     ...sounds.filter((s) => s.category === "goal"),
     ...customSongs.filter((s) => s.category === "goal"),
   ];
-  const breakSounds = [
+  const rawBreakSounds = [
     ...sounds.filter((s) => s.category === "break"),
     ...customSongs.filter((s) => s.category === "break"),
   ];
+  const breakSounds =
+    playlistOrder.length > 0
+      ? [...rawBreakSounds].sort((a, b) => {
+          const idxA = playlistOrder.indexOf(a.id);
+          const idxB = playlistOrder.indexOf(b.id);
+          if (idxA === -1) return 1;
+          if (idxB === -1) return -1;
+          return idxA - idxB;
+        })
+      : rawBreakSounds;
+
   const penaltySounds = [
     ...sounds.filter((s) => s.category === "penalty"),
     ...customSongs.filter((s) => s.category === "penalty"),
   ];
   const nextBreakSong = breakSounds[(currentIndex + 1) % breakSounds.length];
+
+  const handleShuffle = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (status.playing) {
+      player.pause();
+      player.seekTo(0);
+      setActiveButton(null);
+    }
+    const all = [...sounds, ...customSongs];
+    const shuffled = shuffleList(all);
+    const newOrder = shuffled.map((s) => s.id);
+    setPlaylistOrder(newOrder);
+    setCurrentIndex(0);
+    await AsyncStorage.setItem("playlist_order", JSON.stringify(newOrder));
+    await AsyncStorage.setItem("last_break_index", "0");
+  };
 
   // Ladda in senast spelade Break-låt när appen öppnas
   useEffect(() => {
@@ -161,6 +203,14 @@ export default function Soundboard() {
           <Pressable style={styles.arrowButton} onPress={handleNext}>
             <Foundation name="next" size={24} color="#ffd700" />
           </Pressable>
+
+          <Pressable
+            style={styles.shuffleButton}
+            onPress={handleShuffle}
+            hitSlop={8}
+          >
+            <Foundation name="shuffle" size={22} color="#ffd700" />
+          </Pressable>
         </View>
       </View>
 
@@ -253,6 +303,13 @@ const styles = StyleSheet.create({
   },
   arrowButton: {
     padding: 8,
+  },
+  shuffleButton: {
+    padding: 8,
+    borderLeftWidth: 1,
+    borderLeftColor: "#333333",
+    marginLeft: 6,
+    paddingLeft: 10,
   },
   nextSongTextWrapper: {
     flex: 1,

@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as DocumentPicker from "expo-document-picker";
+import * as Haptics from "expo-haptics";
 import { router, useFocusEffect } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useCallback, useState } from "react";
@@ -7,21 +8,35 @@ import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { Foundation } from "@expo/vector-icons";
 import { sounds, SoundTrack } from "../sounds";
 
+function shuffleList<T>(list: T[]): T[] {
+  const result = [...list];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 export default function Playlist() {
   const [filter, setFilter] = useState<"all" | "break" | "goal" | "penalty">("all");
   const [customSongs, setCustomSongs] = useState<SoundTrack[]>([]);
+  const [playlistOrder, setPlaylistOrder] = useState<number[]>([]);
 
   useFocusEffect(
     useCallback(() => {
       ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
 
-      async function loadCustomSongs() {
+      async function loadData() {
         const saved = await AsyncStorage.getItem("custom_songs");
         if (saved) {
           setCustomSongs(JSON.parse(saved));
         }
+        const savedOrder = await AsyncStorage.getItem("playlist_order");
+        if (savedOrder) {
+          setPlaylistOrder(JSON.parse(savedOrder));
+        }
       }
-      loadCustomSongs();
+      loadData();
     }, [])
   );
 
@@ -52,7 +67,26 @@ export default function Playlist() {
     }
   };
 
-  const allSounds = [...sounds, ...customSongs];
+  const rawSounds = [...sounds, ...customSongs];
+
+  const allSounds =
+    playlistOrder.length > 0
+      ? [...rawSounds].sort((a, b) => {
+          const idxA = playlistOrder.indexOf(a.id);
+          const idxB = playlistOrder.indexOf(b.id);
+          if (idxA === -1) return 1;
+          if (idxB === -1) return -1;
+          return idxA - idxB;
+        })
+      : rawSounds;
+
+  const handleShuffle = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const shuffled = shuffleList(rawSounds);
+    const newOrder = shuffled.map((s) => s.id);
+    setPlaylistOrder(newOrder);
+    await AsyncStorage.setItem("playlist_order", JSON.stringify(newOrder));
+  };
 
   const filteredSounds =
     filter === "all"
@@ -114,12 +148,17 @@ export default function Playlist() {
               Tryck på en låt för att justera dess startposition och provlyssna.
             </Text>
 
-            <Pressable style={styles.importButton} onPress={pickSong}>
-              <Foundation name="plus" size={18} color="#000000" />
-              <Text style={styles.importButtonText}>
-                Importera låt från telefonen
-              </Text>
-            </Pressable>
+            <View style={styles.actionRow}>
+              <Pressable style={styles.importButton} onPress={pickSong}>
+                <Foundation name="plus" size={16} color="#000000" />
+                <Text style={styles.importButtonText}>Importera låt</Text>
+              </Pressable>
+
+              <Pressable style={styles.shuffleButton} onPress={handleShuffle}>
+                <Foundation name="shuffle" size={16} color="#ffd700" />
+                <Text style={styles.shuffleButtonText}>Slumpa ordning</Text>
+              </Pressable>
+            </View>
 
             <View style={styles.filterRow}>
               <Pressable
@@ -290,20 +329,44 @@ const styles = StyleSheet.create({
     color: "#000000",
     fontWeight: "bold",
   },
+  actionRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 12,
+    width: "100%",
+  },
   importButton: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#ffd700",
     paddingVertical: 11,
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
     borderRadius: 12,
-    marginTop: 10,
-    gap: 8,
+    gap: 6,
   },
   importButtonText: {
     color: "#000000",
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: "bold",
+  },
+  shuffleButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#1e1e1e",
+    borderWidth: 1,
+    borderColor: "#ffd700",
+    paddingVertical: 11,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    gap: 6,
+  },
+  shuffleButtonText: {
+    color: "#ffd700",
+    fontSize: 13,
     fontWeight: "bold",
   },
 });

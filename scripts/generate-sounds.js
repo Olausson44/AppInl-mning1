@@ -41,6 +41,7 @@ const items = allFiles.map((file, index) => {
     id: ${index + 1},
     title: ${JSON.stringify(file.title)},
     source: require(${JSON.stringify(file.requirePath)}),
+    timeMarker: 60,
     category: ${JSON.stringify(file.category)},
   },`;
 }).join('\n');
@@ -52,6 +53,7 @@ export interface SoundTrack {
   id: number;
   title: string;
   source: any;
+  timeMarker?: number;
   category: SoundCategory;
 }
 

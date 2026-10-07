@@ -39,3 +39,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# temp presentation assets
+temp_presentation/
+scripts/temp_slides/
