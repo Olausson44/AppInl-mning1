@@ -40,6 +40,8 @@ yarn-error.*
 /ios
 /android
 
-# temp presentation assets
+# presentation files
+*.pptx
+scripts/generate_presentation.py
 temp_presentation/
 scripts/temp_slides/
